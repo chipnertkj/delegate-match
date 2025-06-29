@@ -1,0 +1,11 @@
+error: found leading path separator, expected non-crate path
+  --> tests/compile_fail/empty_path.rs:10:13
+   |
+10 |             ::{ A } => {},
+   |             ^
+
+error: expected identifier
+  --> tests/compile_fail/empty_path.rs:10:15
+   |
+10 |             ::{ A } => {},
+   |               ^

@@ -1,0 +1,5 @@
+error: missing comma after match arm body
+ --> tests/compile_fail/comma.rs:6:23
+  |
+6 |             {1, 2} => ()
+  |                       ^^
