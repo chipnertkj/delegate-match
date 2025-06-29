@@ -10,14 +10,10 @@
 )]
 #![deny(nonstandard_style, reason = "use commonly agreed on standards")]
 #![deny(future_incompatible, reason = "provides easier maintenance")]
-#![deny(deprecated_safe_2024, reason = "better safety guarantees")]
+#![deny(deprecated_safe, reason = "better safety guarantees")]
 // Warn lints.
 #![warn(missing_docs, reason = "helps with documentation coverage")]
 #![warn(clippy::cargo, reason = "improves crate metadata quality")]
-#![warn(
-    clippy::cargo_common_metadata,
-    reason = "improves crate metadata quality"
-)]
 #![warn(missing_debug_implementations, reason = "this is a library")]
 #![warn(
     clippy::pedantic,

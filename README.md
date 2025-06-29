@@ -2,7 +2,6 @@
 
 [![Crates.io](https://img.shields.io/crates/v/delegate-match)](https://crates.io/crates/delegate-match)
 [![Docs.rs](https://docs.rs/delegate-match/badge.svg)](https://docs.rs/delegate-match)
-![License](https://img.shields.io/github/license/chipnertkj/delegate-match)
 [![Rust Version](https://img.shields.io/badge/MSRV-1.81.0-blue)](https://github.com/chipnertkj/delegate-match/blob/main/Cargo.toml)
 [![Build](https://github.com/chipnertkj/delegate-match/actions/workflows/ci.yml/badge.svg)](https://github.com/chipnertkj/delegate-match/actions/workflows/ci.yml)
 
@@ -11,7 +10,7 @@ Convenience macro for writing grouped `match` arms for different underlying type
 Writing repetitive `match` arms for enumerations (or other pattern-matching
 constructs) &mdash; especially when types, but not the API, differ &mdash;
 can quickly become boilerplate. `delegate_match!` lets you list
-several patterns up-front **once** and then re-uses a single body for each
+several patterns up-front once and then re-uses a single body for each
 of them, automatically expanding into equivalent ordinary Rust code.
 
 ## Examples
@@ -37,20 +36,21 @@ delegate_match! {
 ### Using placeholders
 
 ```rust
-# use delegate_match::delegate_match;
-# enum Msg { Ping, Log }
-# let msg = Msg::Log;
+use delegate_match::delegate_match;
+
+enum Msg { Ping, Log }
+let msg = Msg::Log;
+
 delegate_match! {
     match msg {
-        // `$assoc_ts` and `$entry_pat` are placeholders substituted at compile time.
-        // You can use these placeholders in any part of the generated arm:
-        //  - inside the optional `if` guard,
-        //  - inside the arm pattern (between `if` guard and arm body),
-        //  - anywhere in the arm body.
-        // The macro performs substitution before the code is type-checked, so the
-        // resulting arm is as if you had written the concrete tokens yourself.
+        // Outputs "🏓 Ping" or "📝 Log" depending on the variant.
         Msg::{ Ping: "🏓", Log: "📝" } => {
-            // Outputs "🏓 Ping" or "📝 Log" depending on the variant.
+            // `$assoc_ts` and `$entry_pat` are placeholders substituted at compile time.
+            // They are substituted for every entry *before the code is type-checked*,
+            // and they may appear in the following places:
+            //   - inside the delegate arm pattern (if present),
+            //   - inside the match arm guard expression (if present),
+            //   - inside the arm body expression.
             println!("{} {}", $assoc_ts, stringify!($entry_pat))
         }
     }

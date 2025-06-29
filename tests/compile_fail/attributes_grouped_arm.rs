@@ -10,7 +10,7 @@ fn doubled(n: Num) -> i32 {
     delegate_match! {
         match n {
             Num::{ A(0) } => panic!("covered"),
-            #[cfg(false)]
+            #[cfg(any())] // always false
             Num::{ A, B }(v) => {
                 v * 2
             }

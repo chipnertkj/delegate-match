@@ -15,6 +15,7 @@ use crate::delegate_arm::DelegateArm;
 
 /// Represents the entire input to the `delegate_match!` procedural macro.
 /// Corresponds 1-to-1 to the user-written `match` expression.
+#[allow(clippy::module_name_repetitions)]
 pub struct ExprDelegateMatch {
     pub outer_attrs: Vec<syn::Attribute>,
     pub match_token: Token![match],
