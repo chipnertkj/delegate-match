@@ -3,9 +3,12 @@
 
 use proc_macro2::TokenStream as TokenStream2;
 use quote::ToTokens;
-use syn::{parse::ParseStream, Token};
+use syn::{parse::ParseStream, spanned::Spanned, Token};
 
-use crate::util::debug_trace;
+use crate::{
+    associated::Associated,
+    util::{debug_trace, SynErrorContext as _},
+};
 
 /// One item inside the entry list of a [`DelegateArm`]: `{ ... }`.
 /// It consists of a pattern plus an optional *associated* token stream after `:`.
@@ -16,19 +19,18 @@ use crate::util::debug_trace;
 #[derive(Clone)]
 pub struct DelegateEntry {
     pub pat: syn::Pat,
-    pub associated: Option<(Token![:], TokenStream2)>,
+    pub associated: Option<(Token![:], Associated)>,
     pub _comma: Option<Token![,]>,
 }
 
 impl syn::parse::Parse for DelegateEntry {
     fn parse(input: ParseStream<'_>) -> syn::Result<Self> {
-        debug_trace!("parsing entry in: {}", input);
+        debug_trace!("parsing entry in: {input}");
         let pat = syn::Pat::parse_single(input)?;
         debug_trace!("parsed pat: {}", pat.to_token_stream());
-        debug_trace!("left: {}", input);
-        let associated = Self::parse_associated_tokens(input)?;
-        if let Some((_, tokens)) = &associated {
-            debug_trace!("parsed associated: {tokens}");
+        let associated = Self::parse_associated(input)?;
+        if let Some((_, associated)) = &associated {
+            debug_trace!("parsed associated: {}", associated.to_token_stream());
         } else {
             debug_trace!("no associated tokens");
         }
@@ -37,7 +39,15 @@ impl syn::parse::Parse for DelegateEntry {
         } else if input.peek(Token![,]) {
             Some(input.parse()?)
         } else {
-            return Err(input.error("expected comma after entry"));
+            let mut err = syn::Error::new(pat.span(), "expected comma after entry");
+            if let Some((_, associated)) = &associated {
+                err = syn::Error::new(
+                    associated.span(),
+                    format!("note: associated was parsed as `{}`", associated.as_ref()),
+                )
+                .wrap_err(err);
+            }
+            return Err(err);
         };
         debug_trace!("parsed entry: {}", pat.to_token_stream());
         Ok(Self {
@@ -59,19 +69,19 @@ impl DelegateEntry {
     }
 
     /// Return the user-supplied token stream that followed a `:` after the entry, if available.
-    pub(crate) fn associated_tokens(&self) -> Option<&TokenStream2> {
-        self.associated.as_ref().map(|(_, tokens)| tokens)
+    pub(crate) fn associated_tokens(&self) -> Option<TokenStream2> {
+        self.associated
+            .as_ref()
+            .map(|(_, associated)| associated.to_token_stream())
     }
 
     /// Parse the optional `: <tokens>` part that can accompany a pattern inside the entry list.
-    fn parse_associated_tokens(
-        input: ParseStream<'_>,
-    ) -> syn::Result<Option<(Token![:], TokenStream2)>> {
+    fn parse_associated(input: ParseStream<'_>) -> syn::Result<Option<(Token![:], Associated)>> {
         if input.peek(Token![:]) {
-            debug_trace!("parsing associated tokens");
+            debug_trace!("parsing associated tokens in: {input}");
             let colon_token = input.parse()?;
-            let tokens = crate::expr::parse_tokens(input)?;
-            Ok(Some((colon_token, tokens)))
+            let associated = input.parse()?;
+            Ok(Some((colon_token, associated)))
         } else {
             Ok(None)
         }

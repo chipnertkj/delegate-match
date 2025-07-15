@@ -24,6 +24,7 @@
     reason = "experimental lints, use #[allow] to disable annoying ones"
 )]
 
+mod associated;
 mod delegate_arm;
 mod delegate_entry;
 mod delegate_match;
@@ -53,7 +54,7 @@ use syn::parse_macro_input;
 ///
 /// - `arm_path` &mdash; optional path prefix (e.g. `MyEnum` or `::std::io`)
 /// - `entry_pat` &mdash; individual *entry pattern*, also available as the `$entry_pat` placeholder.
-/// - `assoc_ts` &mdash; *associated tokens*, also available as the `$assoc_ts` placeholder.
+/// - `assoc_ts` &mdash; *associated syntax item*, also available as the `$assoc_ts` placeholder.
 /// - `arm_pat` &mdash; an optional pattern appended to every entry.
 /// - `guard_expr` &mdash; an optional `if` guard.
 /// - `body_expr` &mdash; expression generated for each entry.
@@ -75,6 +76,12 @@ use syn::parse_macro_input;
 /// The available placeholders are:
 ///   - `$entry_pat` &mdash; the entry pattern for a generated arm.
 ///   - `$assoc_ts` &mdash; the tokens following an entry, up until the next one (excluding the colon).
+///     Can be any of the following:
+///       - Expression
+///       - Statement
+///       - Pattern
+///       - Type
+///     The first that matches is used, in the above order.
 ///
 /// The macro is supposed to accept standard Rust `match` expression syntax, extended with the above.
 /// Any other deviation should generally be considered a bug.

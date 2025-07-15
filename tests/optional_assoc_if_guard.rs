@@ -7,14 +7,19 @@ enum Data {
 
 fn test(x: Data) -> i32 {
     delegate_match! {
+        #[allow(clippy::let_and_return, redundant_semicolons, reason = "intentional test case")]
         match x {
             // - If guard in a delegate arm.
             // - `$assoc_ts` only available for I16.
-            Data::{ I16: as i32, I32 }(val) if val > 0 => {
-                (val * 2) $assoc_ts
+            Data::{ I16: let val = val as i32, I32 }(val) if val > 0 => {
+                let val = (val * 2);
+                $assoc_ts;
+                val
             }
-            Data::{ I16: as i32, I32 }(val) => {
-                -val $assoc_ts
+            Data::{ I16: let val = val as i32, I32 }(val) => {
+                let val = -val;
+                $assoc_ts;
+                val
             },
         }
     }

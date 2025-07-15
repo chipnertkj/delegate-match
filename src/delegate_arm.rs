@@ -273,40 +273,45 @@ impl DelegateArm {
     /// Combine path, the current entry pattern and pattern into the
     /// final pattern of the generated arm.
     fn build_pattern_with(&self, entry: &DelegateEntry) -> syn::Result<syn::Pat> {
-        let path_ref = &self.path;
-        let sep = self.path_sep.as_ref();
-        let assoc_ts = entry.associated_tokens();
         // Perform substitution on the arm pattern, if available.
-        let arm_pat_ts = self
-            .pat
-            .as_ref()
-            .map(|ts| crate::substitute::substitute(ts, Some(&entry.pat), assoc_ts));
-        // This let-binding is needed for `quote!` to work.
-        // It has to be in this exact scope to satisfy the borrow checker.
-        let entry_pat = &entry.pat;
+        let arm_pat_ts = self.pat.as_ref().map(|ts| {
+            crate::substitute::substitute(ts, &entry.pat, entry.associated_tokens().as_ref())
+        });
+        Self::build_final_pattern(
+            self.path.as_ref(),
+            self.path_sep.as_ref(),
+            &entry.pat,
+            arm_pat_ts.as_ref(),
+        )
+    }
+
+    /// Build the final pattern of the generated match arm.
+    fn build_final_pattern(
+        path: Option<&syn::Path>,
+        path_sep: Option<&Token![::]>,
+        entry_pat: &syn::Pat,
+        arm_pat_ts: Option<&TokenStream2>,
+    ) -> syn::Result<syn::Pat> {
         // How a regular match arm pattern is built.
-        let verbatim_join = || syn::Pat::Verbatim(quote!(#path_ref #sep #entry_pat #arm_pat_ts));
+        let verbatim_join = || syn::Pat::Verbatim(quote!(#path #path_sep #entry_pat #arm_pat_ts));
         // Build the final pattern.
-        let final_pat = match &entry.pat {
+        #[allow(
+            clippy::match_same_arms,
+            reason = "loses semantic distinction between cases"
+        )]
+        match (&entry_pat, &arm_pat_ts) {
             // Fully compatible.
-            syn::Pat::Ident(_) | syn::Pat::Path(_) => verbatim_join(),
+            (syn::Pat::Ident(_) | syn::Pat::Path(_), _) => Ok(verbatim_join()),
             // Only build if no arm pattern is present.
-            syn::Pat::TupleStruct(_) | syn::Pat::Struct(_) if arm_pat_ts.is_none() => {
-                verbatim_join()
-            }
+            (syn::Pat::TupleStruct(_) | syn::Pat::Struct(_), None) => Ok(verbatim_join()),
             // Incompatible. Error if arm pattern is present.
-            _ => match arm_pat_ts {
-                Some(_) => {
-                    return Err(syn::Error::new(
-                        entry.pat.span(),
-                        "entry pattern incompatible with arm pattern",
-                    ))
-                }
-                // No arm pattern, so just use the entry pattern.
-                None => entry.pat.clone(),
-            },
-        };
-        Ok(final_pat)
+            (_, Some(_)) => Err(syn::Error::new(
+                entry_pat.span(),
+                "entry pattern incompatible with arm pattern",
+            )),
+            // No arm pattern, so just use the entry pattern.
+            (_, None) => Ok(entry_pat.clone()),
+        }
     }
 
     /// Substitute placeholders in the user-provided body for the given entry.
@@ -320,9 +325,9 @@ impl DelegateArm {
         F: FnOnce(ParseStream<'_>) -> syn::Result<syn::Expr>,
     {
         debug_trace!("tokenizing substituted expr");
-        let associated = entry.associated_tokens();
-        debug_trace!("input: {}", ts);
-        let tokens = crate::substitute::substitute(ts, Some(&entry.pat), associated);
+        debug_trace!("input: {ts}");
+        let tokens =
+            crate::substitute::substitute(ts, &entry.pat, entry.associated_tokens().as_ref());
         debug_trace!("substituted tokens: {tokens}");
         let expr = syn::parse::Parser::parse2(f, tokens).wrap_err(syn::Error::new(
             span,

@@ -12,7 +12,7 @@ const ASSOC_TS: &str = "assoc_ts";
 /// Substitute placeholders with concrete tokens.
 pub fn substitute(
     tokens: &TokenStream2,
-    entry_pat: Option<&syn::Pat>,
+    entry_pat: &syn::Pat,
     assoc_ts: Option<&TokenStream2>,
 ) -> TokenStream2 {
     debug_trace!("substitution pass");

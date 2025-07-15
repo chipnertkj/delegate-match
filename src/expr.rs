@@ -3,6 +3,8 @@
 use quote::ToTokens as _;
 use syn::{parse::ParseStream, Token};
 
+use crate::util::debug_trace;
+
 /// Trait that answers whether the expression syntactically requires a trailing comma when used as a
 /// match arm body.
 pub trait NeedsCommaAsArmBody {
@@ -50,13 +52,12 @@ pub fn parse_tokens(input: ParseStream<'_>) -> syn::Result<proc_macro2::TokenStr
     use proc_macro2::{Delimiter, TokenTree};
 
     let mut collected = Vec::<TokenTree>::new();
-    let mut paren_depth: usize = 0;
 
     while !input.is_empty() {
         // If we are not inside delimited stuff and the next token is a comma,
         // the expression-like fragment is over.
         // Leave the comma in the buffer for the outer parser to consume.
-        if paren_depth == 0 && input.peek(Token![,]) {
+        if input.peek(Token![,]) {
             break;
         }
 
@@ -64,13 +65,7 @@ pub fn parse_tokens(input: ParseStream<'_>) -> syn::Result<proc_macro2::TokenStr
         match &tt {
             TokenTree::Group(group) => {
                 let delim = group.delimiter();
-                // if matches!(
-                //     delim,
-                //     Delimiter::Parenthesis | Delimiter::Bracket | Delimiter::Brace
-                // ) {
-                //     // Enter.
-                //     paren_depth += 1;
-                // }
+                debug_trace!("parsed group: {tt}");
                 collected.push(tt.clone());
                 if matches!(
                     delim,
@@ -79,25 +74,15 @@ pub fn parse_tokens(input: ParseStream<'_>) -> syn::Result<proc_macro2::TokenStr
                     // Special case.
                     // Block-like expression without a trailing comma inside a match arm.
                     // Look ahead. If the expression does not continue, we finish right here.
-                    if paren_depth == 0 && !input.is_empty() && !expr_continues(input) {
+                    if !expr_continues(input) {
                         break;
                     }
                 }
                 continue;
             }
-            // Opening punctuation of bracketed constructs that are not represented as a `Group`
-            // (angle brackets in generic arguments, for example).
-            TokenTree::Punct(p)
-                if p.as_char() == '<' && matches!(p.spacing(), proc_macro2::Spacing::Alone) =>
-            {
-                paren_depth += 1;
+            _ => {
+                debug_trace!("parsed: {tt}");
             }
-            TokenTree::Punct(p)
-                if p.as_char() == '>' && matches!(p.spacing(), proc_macro2::Spacing::Alone) =>
-            {
-                paren_depth = paren_depth.saturating_sub(1);
-            }
-            _ => {}
         }
 
         collected.push(tt);

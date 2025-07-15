@@ -1,25 +1,35 @@
-error: failed to parse delegate arm body
-  --> tests/compile_fail/invalid_body_after_substitution.rs:11:36
+error: failed to parse delegate arm entry
+  --> tests/compile_fail/invalid_body_after_substitution.rs:11:21
    |
-11 |               E::{ A: ??, B: ?? } => {
-   |  ____________________________________^
-12 | |                 // Substitution of `$assoc_ts` yields `??`, which is not a valid Rust expr.
-13 | |                 $assoc_ts
-14 | |             }
-   | |_____________^
+11 |             E::{ A: ??, B: ?? } => {
+   |                     ^
 
-error: failed to parse expr after substitution
-  --> tests/compile_fail/invalid_body_after_substitution.rs:11:36
+error: expected associated syntax item
+  --> tests/compile_fail/invalid_body_after_substitution.rs:11:21
    |
-11 |               E::{ A: ??, B: ?? } => {
-   |  ____________________________________^
-12 | |                 // Substitution of `$assoc_ts` yields `??`, which is not a valid Rust expr.
-13 | |                 $assoc_ts
-14 | |             }
-   | |_____________^
+11 |             E::{ A: ??, B: ?? } => {
+   |                     ^
+
+error: expected one of: `for`, parentheses, `fn`, `unsafe`, `extern`, identifier, `::`, `<`, `dyn`, square brackets, `*`, `&`, `!`, `impl`, `_`, lifetime
+  --> tests/compile_fail/invalid_body_after_substitution.rs:11:21
+   |
+11 |             E::{ A: ??, B: ?? } => {
+   |                     ^
+
+error: expected one of: identifier, `::`, `<`, `_`, literal, `const`, `ref`, `mut`, `&`, parentheses, square brackets, `..`, `const`
+  --> tests/compile_fail/invalid_body_after_substitution.rs:11:21
+   |
+11 |             E::{ A: ??, B: ?? } => {
+   |                     ^
 
 error: expected an expression
   --> tests/compile_fail/invalid_body_after_substitution.rs:11:21
    |
 11 |             E::{ A: ??, B: ?? } => {
    |                     ^
+
+error: expected identifier
+  --> tests/compile_fail/invalid_body_after_substitution.rs:11:16
+   |
+11 |             E::{ A: ??, B: ?? } => {
+   |                ^

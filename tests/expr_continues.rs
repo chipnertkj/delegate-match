@@ -8,8 +8,8 @@ struct Data {
 fn get_value(d: Option<Data>) -> i32 {
     delegate_match! {
         match d {
-            // Test body expression parsing with field access.
-            { Some }(v) => v.value,
+            // Test body expression parsing with a group, field access and various operators.
+            { Some }(v) => *&{v}.value + 1,
             _ => 0,
         }
     }
@@ -18,6 +18,6 @@ fn get_value(d: Option<Data>) -> i32 {
 #[test]
 fn test_expr_continues_field_access() {
     let d = Data { value: 7 };
-    assert_eq!(get_value(Some(d)), 7);
+    assert_eq!(get_value(Some(d)), 8);
     assert_eq!(get_value(None), 0);
 }
