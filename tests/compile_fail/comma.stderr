@@ -1,5 +1,11 @@
-error: missing comma after match arm body
- --> tests/compile_fail/comma.rs:6:23
-  |
-6 |             {1, 2} => ()
-  |                       ^^
+error: expected `,` following `match` arm
+  --> tests/compile_fail/comma.rs:11:6
+   |
+11 |     }
+   |      ^
+   |
+   = note: this error originates in the macro `delegate_match` (in Nightly builds, run with -Z macro-backtrace for more info)
+help: missing a comma here to end this `match` arm
+   |
+11 |     },
+   |      +

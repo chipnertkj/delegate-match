@@ -9,8 +9,8 @@ enum Num {
 fn doubled(n: Num) -> i32 {
     delegate_match! {
         match n {
-            Num::{ A(0) } => panic!("covered"),
-            #[cfg(any())] // always false
+            Num::A(0) => panic!("covered"),
+            #[cfg(any())] // `any()` is always false, so this arm never reaches the compiler.
             Num::{ A, B }(v) => {
                 v * 2
             }

@@ -1,17 +1,17 @@
 error: failed to parse delegate arm entry
- --> tests/compile_fail/missing_entry_comma.rs:6:17
+ --> tests/compile_fail/missing_entry_comma.rs:7:17
   |
-6 |             { 1 2 3 } => {},
+7 |             { 1 2 3 } => {},
   |                 ^
 
 error: expected comma after entry
- --> tests/compile_fail/missing_entry_comma.rs:6:17
+ --> tests/compile_fail/missing_entry_comma.rs:7:17
   |
-6 |             { 1 2 3 } => {},
+7 |             { 1 2 3 } => {},
   |                 ^
 
 error: expected one of: identifier, `::`, `<`, `_`, literal, `const`, `ref`, `mut`, `&`, parentheses, square brackets, `..`, `const`
- --> tests/compile_fail/missing_entry_comma.rs:6:13
+ --> tests/compile_fail/missing_entry_comma.rs:7:13
   |
-6 |             { 1 2 3 } => {},
+7 |             { 1 2 3 } => {},
   |             ^

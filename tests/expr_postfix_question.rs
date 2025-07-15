@@ -3,6 +3,7 @@ use delegate_match::delegate_match;
 fn double_inner(r: Result<Result<i32, &'static str>, &'static str>) -> Result<i32, &'static str> {
     let res = delegate_match! {
         match r {
+            // Test body expression parsing with postfix question mark.
             { Ok }(inner) => inner?,
             _ => 0,
         }

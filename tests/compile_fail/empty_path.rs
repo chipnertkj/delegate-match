@@ -7,6 +7,8 @@ enum E {
 fn main() {
     delegate_match! {
         match E::A {
+            // Empty path prefix is not allowed.
+            // Omit `::` to use entry patterns without prefixes.
             ::{ A } => {},
         }
     }

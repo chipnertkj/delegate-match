@@ -1,5 +1,5 @@
 error: entry pattern incompatible with arm pattern
- --> tests/compile_fail/non_ident_extra_pattern.rs:6:15
+ --> tests/compile_fail/non_ident_extra_pattern.rs:7:15
   |
-6 |             { 1 }(val) => val,
+7 |             { 1 }(val) => val,
   |               ^

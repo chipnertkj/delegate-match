@@ -1,12 +1,10 @@
 use delegate_match::delegate_match;
 
-// The entry pattern is a wildcard `_` with *no* path prefix. This was previously only
-// tested in a compile-fail scenario when an *extra* pattern followed. Here we show that
-// the basic case expands correctly.
 fn always_true() -> bool {
     delegate_match! {
-        #[allow(clippy::match_single_binding)]
+        #[allow(clippy::match_single_binding, reason = "intentional test case")]
         match () {
+            // The entry pattern is a wildcard with no path prefix.
             { _ } => true,
         }
     }

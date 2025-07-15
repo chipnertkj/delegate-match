@@ -6,13 +6,14 @@ enum Message {
     Bye,
 }
 
-fn variant_name(msg: Message) -> &'static str {
-    delegate_match! {
-        match msg {
-            Message::{ Hello, Bye } => {
-                // `$entry_pat` is replaced by the actual variant identifier, so
-                // the stringify! macro produces the variant name at compile time.
-                stringify!($entry_pat)
+// Entry pattern is used as a string literal to display the name of the variant.
+impl AsRef<str> for Message {
+    fn as_ref(&self) -> &str {
+        delegate_match! {
+            match self {
+                Message::{ Hello, Bye } => {
+                    stringify!($entry_pat)
+                }
             }
         }
     }
@@ -20,6 +21,6 @@ fn variant_name(msg: Message) -> &'static str {
 
 #[test]
 fn test_variant_name() {
-    assert_eq!(variant_name(Message::Hello), "Hello");
-    assert_eq!(variant_name(Message::Bye), "Bye");
+    assert_eq!(Message::Hello.as_ref(), "Hello");
+    assert_eq!(Message::Bye.as_ref(), "Bye");
 }

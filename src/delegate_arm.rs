@@ -11,7 +11,7 @@ use crate::{
 };
 
 /// The special grouped arm syntax handled by the `delegate_match!` macro:
-/// `path::{ Foo[: bar], ... } [pat] [if guard] => body,`
+/// `path::{ Foo[: bar], ... } [pat] [if guard] => body[,]`
 #[derive(Clone)]
 pub struct DelegateArm {
     pub attrs: Vec<syn::Attribute>,
@@ -30,7 +30,7 @@ pub struct DelegateArm {
 
 impl ToTokens for DelegateArm {
     fn to_tokens(&self, tokens: &mut TokenStream2) {
-        match self.to_arms() {
+        match self.build_arms() {
             Ok(arms) => tokens.append_all(&arms),
             Err(e) => {
                 // Turn the `compile_error!` invocation into a valid match arm so that the
@@ -117,7 +117,7 @@ impl DelegateArm {
         Ok((brace_token, entries))
     }
 
-    /// Parse tokens while tracking delimiter depth.
+    /// Parse tokens until the given predicate returns `true`.
     fn parse_tokens_until<F>(input: ParseStream<'_>, mut f: F) -> syn::Result<TokenStream2>
     where
         F: FnMut(ParseStream<'_>, &TokenTree) -> bool,
@@ -134,6 +134,7 @@ impl DelegateArm {
         Ok(tokens.into_iter().collect())
     }
 
+    /// Parse tokens while tracking delimiter depth.
     fn parse_tokens_with_depth<F>(input: ParseStream<'_>, mut f: F) -> syn::Result<TokenStream2>
     where
         F: FnMut(ParseStream<'_>, &TokenTree, i32) -> bool,
@@ -187,36 +188,24 @@ impl DelegateArm {
     }
 
     /// Expand the grouped delegate arm into a list of concrete [`syn::Arm`]s.
-    fn to_arms(&self) -> syn::Result<Vec<syn::Arm>> {
+    fn build_arms(&self) -> syn::Result<Vec<syn::Arm>> {
+        let len = self.entries.len();
+        let is_last = |i: usize| i == len - 1;
         self.entries
             .iter()
-            .map(|entry| self.to_arm_with(entry))
+            .enumerate()
+            .map(|(i, entry)| self.build_arm_with(entry, is_last(i)))
             .collect()
     }
 
-    /// Build one concrete [`syn::Arm`] from the template combined with the given `entry`.
-    fn to_arm_with(&self, entry: &DelegateEntry) -> syn::Result<syn::Arm> {
-        let pat = self.to_pattern_with(entry)?;
-        let body_expr = Self::to_substituted_expr_with(
-            &self.body,
-            self.body.span(),
-            syn::Expr::parse_with_earlier_boundary_rule,
-            entry,
-        )
-        .wrap_err_with(|| syn::Error::new(self.body.span(), "failed to parse delegate arm body"))?;
-
-        // Keep whatever comma the user wrote; emit error if missing when needed.
-        let comma = self.comma;
-        if comma.is_none() && body_expr.needs_comma() {
-            return Err(syn::Error::new(
-                self.body.span(),
-                "missing comma after match arm body",
-            ));
-        }
-
-        let guard = match &self.guard {
-            Some((if_tok, guard_ts)) => {
-                let guard_expr = Self::to_substituted_expr_with(
+    /// Build an if-guard for the given entry.
+    fn build_guard_with(
+        &self,
+        entry: &DelegateEntry,
+    ) -> syn::Result<Option<(Token![if], Box<syn::Expr>)>> {
+        match self.guard {
+            Some((if_tok, ref guard_ts)) => {
+                let guard_expr = Self::build_substituted_expr_with(
                     guard_ts,
                     guard_ts.span(),
                     syn::Expr::parse_with_earlier_boundary_rule,
@@ -226,59 +215,102 @@ impl DelegateArm {
                     guard_ts.span(),
                     "failed to parse guard expression",
                 ))?;
-                Some((*if_tok, Box::new(guard_expr)))
+                let guard = (if_tok, Box::new(guard_expr));
+                Ok(Some(guard))
             }
-            None => None,
-        };
+            None => Ok(None),
+        }
+    }
 
+    /// Build the body [`syn::Expr`] for the given entry.
+    fn build_body_expr_with(&self, entry: &DelegateEntry) -> syn::Result<Box<syn::Expr>> {
+        let expr = Self::build_substituted_expr_with(
+            &self.body,
+            self.body.span(),
+            syn::Expr::parse_with_earlier_boundary_rule,
+            entry,
+        )
+        .wrap_err_with(|| syn::Error::new(self.body.span(), "failed to parse delegate arm body"))?;
+        Ok(Box::new(expr))
+    }
+
+    /// If the user did not provide a comma, return one if the body expression needs it.
+    /// This is valid if it's, for example, the last match arm that results in a normal expression.
+    fn build_arm_comma_with(
+        &self,
+        body: &syn::Expr,
+        is_last_entry: bool,
+    ) -> Option<syn::token::Comma> {
+        self.comma.or_else(|| {
+            let condition = body.needs_comma() && !is_last_entry;
+            condition.then(|| {
+                syn::token::Comma {
+                    // Use entire body as span for errors.
+                    // This is the last spanned item we have access to.
+                    spans: [self.body.span(); 1],
+                }
+            })
+        })
+    }
+
+    /// Build one concrete [`syn::Arm`] from the template combined with the given `entry`.
+    fn build_arm_with(&self, entry: &DelegateEntry, is_last_entry: bool) -> syn::Result<syn::Arm> {
+        let attrs = self.attrs.clone();
+        let pat = self.build_pattern_with(entry)?;
+        let body = self.build_body_expr_with(entry)?;
+        let guard = self.build_guard_with(entry)?;
+        let comma = self.build_arm_comma_with(&body, is_last_entry);
         Ok(syn::Arm {
-            attrs: self.attrs.clone(),
+            attrs,
             pat,
             guard,
             fat_arrow_token: self.fat_arrow_token,
-            body: Box::new(body_expr),
+            body,
             comma,
         })
     }
 
     /// Combine path, the current entry pattern and pattern into the
     /// final pattern of the generated arm.
-    fn to_pattern_with(&self, entry: &DelegateEntry) -> syn::Result<syn::Pat> {
-        use quote::quote;
+    fn build_pattern_with(&self, entry: &DelegateEntry) -> syn::Result<syn::Pat> {
         let path_ref = &self.path;
         let sep = self.path_sep.as_ref();
-
-        let associated = entry.associated_tokens();
+        let assoc_ts = entry.associated_tokens();
+        // Perform substitution on the arm pattern, if available.
         let arm_pat_ts = self
             .pat
             .as_ref()
-            .map(|ts| crate::substitute::substitute(ts, Some(&entry.pat), associated));
-
-        let entry_pat_tokens = &entry.pat;
-
-        let verbatim_join =
-            || syn::Pat::Verbatim(quote!(#path_ref #sep #entry_pat_tokens #arm_pat_ts));
+            .map(|ts| crate::substitute::substitute(ts, Some(&entry.pat), assoc_ts));
+        // This let-binding is needed for `quote!` to work.
+        // It has to be in this exact scope to satisfy the borrow checker.
+        let entry_pat = &entry.pat;
+        // How a regular match arm pattern is built.
+        let verbatim_join = || syn::Pat::Verbatim(quote!(#path_ref #sep #entry_pat #arm_pat_ts));
+        // Build the final pattern.
         let final_pat = match &entry.pat {
+            // Fully compatible.
             syn::Pat::Ident(_) | syn::Pat::Path(_) => verbatim_join(),
+            // Only build if no arm pattern is present.
             syn::Pat::TupleStruct(_) | syn::Pat::Struct(_) if arm_pat_ts.is_none() => {
                 verbatim_join()
             }
-            _ => {
-                if arm_pat_ts.is_some() {
+            // Incompatible. Error if arm pattern is present.
+            _ => match arm_pat_ts {
+                Some(_) => {
                     return Err(syn::Error::new(
                         entry.pat.span(),
                         "entry pattern incompatible with arm pattern",
-                    ));
+                    ))
                 }
-                entry.pat.clone()
-            }
+                // No arm pattern, so just use the entry pattern.
+                None => entry.pat.clone(),
+            },
         };
-
         Ok(final_pat)
     }
 
     /// Substitute placeholders in the user-provided body for the given entry.
-    fn to_substituted_expr_with<F>(
+    fn build_substituted_expr_with<F>(
         ts: &TokenStream2,
         span: proc_macro2::Span,
         f: F,

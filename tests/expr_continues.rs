@@ -8,6 +8,7 @@ struct Data {
 fn get_value(d: Option<Data>) -> i32 {
     delegate_match! {
         match d {
+            // Test body expression parsing with field access.
             { Some }(v) => v.value,
             _ => 0,
         }

@@ -23,6 +23,7 @@ enum D {
 fn calc_a(d: &D) -> i32 {
     delegate_match! {
         match d {
+            // Complex pattern matching.
             D::{ A(A { a }), B(B { b: _, a: A { a } }), C(C { a: A{a}, b: _ }) } => *a,
         }
     }
@@ -31,6 +32,7 @@ fn calc_a(d: &D) -> i32 {
 fn calc_b(d: &D) -> i32 {
     delegate_match! {
         match d {
+            // Complex pattern matching.
             D::{ B(B { b, a: _ }), C(C { a: _, b: B {b, a: _} }) } => *b,
             D::A(_) => 0,
         }

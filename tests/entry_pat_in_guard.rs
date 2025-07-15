@@ -10,13 +10,9 @@ enum Letter {
 fn matches_letter(letter: Letter, expected: &str) -> bool {
     delegate_match! {
         match letter {
-            // `$entry_pat` is used *inside* the guard expression.
-            Letter::{ A, B, C } if expected == stringify!($entry_pat) => {
-                true
-            }
-            _ => {
-                false
-            }
+            // `$entry_pat` is used inside the guard expression.
+            Letter::{ A, B, C } if expected == stringify!($entry_pat) => true,
+            _ => false
         }
     }
 }

@@ -8,14 +8,11 @@ enum Num {
 
 fn matches_assoc(num: Num) -> bool {
     delegate_match! {
+        #[allow(clippy::redundant_guards, reason = "intentional test case")]
         match num {
-            // `v` is compared with the per-entry associated constant *inside* the guard.
-            Num::{ A: 1, B: 2 }(v) if v == $assoc_ts => {
-                true
-            }
-            _ => {
-                false
-            }
+            // `$assoc_ts` is used inside the guard expression.
+            Num::{ A: 1, B: 2 }(v) if v == $assoc_ts => true,
+            _ => false
         }
     }
 }

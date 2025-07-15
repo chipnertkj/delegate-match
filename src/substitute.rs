@@ -9,15 +9,11 @@ const OPERATOR: char = '$';
 const ENTRY_PAT: &str = "entry_pat";
 const ASSOC_TS: &str = "assoc_ts";
 
-/// Substitute `$entry_pat` / `$assoc_ts` placeholders with their concrete streams.
-///
-/// This walks the token stream recursively and performs *immediate* replacement; no intermediate
-/// placeholder identifiers are introduced because match-arm bodies are no longer parsed before
-/// this step.
+/// Substitute placeholders with concrete tokens.
 pub fn substitute(
     tokens: &TokenStream2,
     entry_pat: Option<&syn::Pat>,
-    associated: Option<&TokenStream2>,
+    assoc_ts: Option<&TokenStream2>,
 ) -> TokenStream2 {
     debug_trace!("substitution pass");
     let mut out = Vec::new();
@@ -32,10 +28,10 @@ pub fn substitute(
                     debug_trace!("found placeholder: ${}", ident_name);
                     let replacement = match ident_name.as_str() {
                         ENTRY_PAT => quote!(#entry_pat),
-                        ASSOC_TS => quote!(#associated),
+                        ASSOC_TS => quote!(#assoc_ts),
                         _ => {
-                            // Unexpected identifier after `$` – leave the `$` in place and fall
-                            // back to default handling below.
+                            // Unexpected identifier after `$`.
+                            // Leave the `$` in place and fall back to default handling below.
                             out.push(TokenTree::Punct(punct.clone()));
                             continue;
                         }
@@ -45,11 +41,11 @@ pub fn substitute(
                     out.extend(replacement);
                     continue;
                 }
-                // `$` not followed by ident – treat it as a normal token.
+                // `$` not followed by ident. Treat it as a normal punctuation token.
                 out.push(punct.clone().into());
             }
             TokenTree::Group(group) => {
-                let inner = substitute(&group.stream(), entry_pat, associated);
+                let inner = substitute(&group.stream(), entry_pat, assoc_ts);
                 let new_group = proc_macro2::Group::new(group.delimiter(), inner);
                 out.push(new_group.into());
             }

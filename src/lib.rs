@@ -102,7 +102,7 @@ use syn::parse_macro_input;
 ///     match ev {
 ///         // This expands to two individual arms.
 ///         MouseEvent::{ Scroll, Position }(x, y) => {
-///             println!("mouse event: $entry_pat → ({x}, {y})")
+///             println!("mouse event: $entry_pat -> ({x}, {y})")
 ///         }
 ///     }
 /// }

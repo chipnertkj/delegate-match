@@ -27,7 +27,7 @@ delegate_match! {
     match ev {
         // This expands to two individual arms.
         MouseEvent::{ Scroll, Position }(x, y) => {
-            println!("mouse event: $entry_pat → ({x}, {y})")
+            println!("mouse event: $entry_pat -> ({x}, {y})")
         }
     }
 }

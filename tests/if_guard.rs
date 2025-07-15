@@ -20,15 +20,11 @@ impl B {
     }
 }
 
-fn bs<T>(x: T) -> T {
-    x
-}
-
 impl Data {
     fn calc(&self, x: i16) -> i16 {
         delegate_match! {
             match self {
-                Data::{ A, B }(val) if bs::<i16>(x) > 0 => {
+                Data::{ A, B }(val) if std::convert::identity::<_>(x) > 0 => {
                     val.calc(x)
                 }
                 Data::{ A, B }(val) => {

@@ -9,8 +9,8 @@ use crate::util::debug_trace;
 
 /// One item inside the entry list of a [`DelegateArm`]: `{ ... }`.
 /// It consists of a pattern plus an optional *associated* token stream after `:`.
-/// During expansion, those two pieces are available as `$entry_pat` and `$assoc_ts`
-/// [placeholders](crate::shared::substitute::substitute_tokens_raw) inside the delegate arm's body.
+/// During expansion, the two are available as `$entry_pat` and `$assoc_ts`
+/// [placeholders](crate::substitute::substitute) inside the delegate arm's body.
 ///
 /// [DelegateArm]: crate::delegate_arm::DelegateArm
 #[derive(Clone)]
@@ -58,7 +58,7 @@ impl DelegateEntry {
         Ok(v)
     }
 
-    /// Return the user-supplied token stream that followed a `:` after the entry, if any.
+    /// Return the user-supplied token stream that followed a `:` after the entry, if available.
     pub(crate) fn associated_tokens(&self) -> Option<&TokenStream2> {
         self.associated.as_ref().map(|(_, tokens)| tokens)
     }

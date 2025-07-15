@@ -1,16 +1,20 @@
 use delegate_match::delegate_match;
 
 #[derive(Debug)]
-enum NumKind {
+enum Ty {
     I32,
     I64,
 }
 
-fn byte_size(k: NumKind) -> usize {
-    delegate_match! {
-        match k {
-            NumKind::{ I32: core::mem::size_of::<i32>(), I64: core::mem::size_of::<i64>() } => {
-                $assoc_ts
+impl Ty {
+    fn size(&self) -> usize {
+        delegate_match! {
+            match self {
+                // Normally we would simply put the type as associated tokens,
+                // but this test verifies that we can use more complex streams instead.
+                Ty::{ I32: core::mem::size_of::<i32>(), I64: core::mem::size_of::<i64>() } => {
+                    $assoc_ts
+                }
             }
         }
     }
@@ -18,7 +22,6 @@ fn byte_size(k: NumKind) -> usize {
 
 #[test]
 fn test_complex_assoc_tokens() {
-    use NumKind::*;
-    assert_eq!(byte_size(I32), std::mem::size_of::<i32>());
-    assert_eq!(byte_size(I64), std::mem::size_of::<i64>());
+    assert_eq!(Ty::I32.size(), std::mem::size_of::<i32>());
+    assert_eq!(Ty::I64.size(), std::mem::size_of::<i64>());
 }
