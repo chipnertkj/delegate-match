@@ -17,6 +17,8 @@ exclude = [
     "CONTRIBUTING.md",
     "rustfmt.toml",
     "Cargo.lock",
+    "tests/",
+    "rust-toolchain.toml",
 ]
 
 [features]
