@@ -1,28 +1,36 @@
 [package]
 name = "delegate-match"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["chipnertkj <domekaij@gmail.com>"]
 rust-version = "1.81.0"
-description = "Procedural macro for delegation of grouped match arms"
+description = "Proc-macro for delegation of grouped match arms"
 documentation = "https://docs.rs/delegate-match"
 repository = "https://github.com/chipnertkj/delegate-match"
 categories = ["rust-patterns"]
 license = "MIT OR Apache-2.0"
 keywords = ["macros", "proc-macro", "procedural-macros", "match", "delegation"]
 readme = "README.md"
+exclude = [
+    ".github/",
+    ".gitignore",
+    "CONTRIBUTING.md",
+    "rustfmt.toml",
+    "Cargo.lock",
+]
 
 [features]
+# Enable debug tracing. Only useful during development of this package.
 debug-trace = []
 
 [lib]
 proc-macro = true
 
 [dependencies]
-syn = { version = "2.0.104", features = ["full", "visit"] }
-quote = "1.0.40"
-proc-macro2 = "1.0.95"
-proc-macro-error2 = "2.0.1"
+syn = { version = "2.0", features = ["full", "visit"] }
+quote = "1.0"
+proc-macro2 = "1.0"
+proc-macro-error2 = "2.0"
 
 [dev-dependencies]
-trybuild = "1.0.105"
+trybuild = "1.0"
