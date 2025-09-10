@@ -14,7 +14,10 @@ use syn::{parse::discouraged::Speculative as _, Token};
 use crate::delegate_arm::DelegateArm;
 
 /// Represents the entire input to the `delegate_match!` procedural macro.
-#[allow(clippy::module_name_repetitions, reason = "this follows syn conventions")]
+#[allow(
+    clippy::module_name_repetitions,
+    reason = "this follows syn conventions"
+)]
 pub struct ExprDelegateMatch {
     pub outer_attrs: Vec<syn::Attribute>,
     pub match_token: Token![match],
