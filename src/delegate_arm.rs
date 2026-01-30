@@ -286,6 +286,12 @@ impl DelegateArm {
     }
 
     /// Build the final pattern of the generated match arm.
+    ///
+    /// This function recursively handles or-patterns (`A | B`) by applying the
+    /// path and arm pattern transformation to each alternative, then recombining
+    /// them.
+    /// For example, `Test::{ A, B | C }(case)` produces `Test::B(case) | Test::C(case)`
+    /// as the second generated match arm.
     fn build_final_pattern(
         path: Option<&syn::Path>,
         path_sep: Option<&Token![::]>,
@@ -300,6 +306,8 @@ impl DelegateArm {
             reason = "loses semantic distinction between cases"
         )]
         match (&entry_pat, &arm_pat_ts) {
+            // Or-pattern: recursively transform each alternative and recombine.
+            (syn::Pat::Or(or_pat), _) => Self::build_or_pattern(path, path_sep, or_pat, arm_pat_ts),
             // Fully compatible.
             (syn::Pat::Ident(_) | syn::Pat::Path(_), _) => Ok(verbatim_join()),
             // Only build if no arm pattern is present.
@@ -312,6 +320,25 @@ impl DelegateArm {
             // No arm pattern, so just use the entry pattern.
             (_, None) => Ok(entry_pat.clone()),
         }
+    }
+
+    /// Recursively transform an or-pattern by applying path and arm pattern to each case.
+    fn build_or_pattern(
+        path: Option<&syn::Path>,
+        path_sep: Option<&Token![::]>,
+        or_pat: &syn::PatOr,
+        arm_pat_ts: Option<&TokenStream2>,
+    ) -> syn::Result<syn::Pat> {
+        let cases: syn::punctuated::Punctuated<syn::Pat, Token![|]> = or_pat
+            .cases
+            .iter()
+            .map(|case| Self::build_final_pattern(path, path_sep, case, arm_pat_ts))
+            .collect::<syn::Result<_>>()?;
+        Ok(syn::Pat::Or(syn::PatOr {
+            attrs: or_pat.attrs.clone(),
+            leading_vert: or_pat.leading_vert,
+            cases,
+        }))
     }
 
     /// Substitute placeholders in the user-provided body for the given entry.

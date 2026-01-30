@@ -26,7 +26,7 @@ pub struct DelegateEntry {
 impl syn::parse::Parse for DelegateEntry {
     fn parse(input: ParseStream<'_>) -> syn::Result<Self> {
         debug_trace!("parsing entry in: {input}");
-        let pat = syn::Pat::parse_single(input)?;
+        let pat = syn::Pat::parse_multi_with_leading_vert(input)?;
         debug_trace!("parsed pat: {}", pat.to_token_stream());
         let associated = Self::parse_associated(input)?;
         if let Some((_, associated)) = &associated {
