@@ -35,4 +35,4 @@ proc-macro2 = "1.0"
 proc-macro-error2 = "2.0"
 
 [dev-dependencies]
-trybuild = "1.0"
+trybuild = "1.0.115"
