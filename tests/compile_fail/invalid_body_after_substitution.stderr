@@ -10,7 +10,19 @@ error: expected associated syntax item
 11 |             E::{ A: ??, B: ?? } => {
    |                     ^
 
-error: expected one of: `for`, parentheses, `fn`, `unsafe`, `extern`, identifier, `::`, `<`, `dyn`, square brackets, `*`, `&`, `!`, `impl`, `_`, lifetime
+error: unable to parse assoc_ts as expression
+  --> tests/compile_fail/invalid_body_after_substitution.rs:11:21
+   |
+11 |             E::{ A: ??, B: ?? } => {
+   |                     ^
+
+error: expected an expression
+  --> tests/compile_fail/invalid_body_after_substitution.rs:11:21
+   |
+11 |             E::{ A: ??, B: ?? } => {
+   |                     ^
+
+error: unable to parse assoc_ts as pattern
   --> tests/compile_fail/invalid_body_after_substitution.rs:11:21
    |
 11 |             E::{ A: ??, B: ?? } => {
@@ -22,7 +34,13 @@ error: expected one of: identifier, `::`, `<`, `_`, literal, `const`, `ref`, `mu
 11 |             E::{ A: ??, B: ?? } => {
    |                     ^
 
-error: expected an expression
+error: unable to parse assoc_ts as type
+  --> tests/compile_fail/invalid_body_after_substitution.rs:11:21
+   |
+11 |             E::{ A: ??, B: ?? } => {
+   |                     ^
+
+error: expected one of: `for`, parentheses, `fn`, `unsafe`, `extern`, identifier, `::`, `<`, `dyn`, square brackets, `*`, `&`, `!`, `impl`, `_`, lifetime
   --> tests/compile_fail/invalid_body_after_substitution.rs:11:21
    |
 11 |             E::{ A: ??, B: ?? } => {
